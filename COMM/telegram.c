@@ -4,6 +4,7 @@
  * Created: 25.10.2018 13:27:10
  *  Author: Johannes
  */
+#include <avr/io.h>
 #include <stdio.h> 
 #include <string.h>
 #include <COMM/telegram.h>
@@ -20,14 +21,6 @@ tele_fixed build_telegram(uint8_t telegram_type, uint8_t destination_group, uint
 	
 	return tele;
 	
-}
-
-void tele_init_buffer(void)
-{
-	tele_recieve_buffer.active = 0;
-	tele_recieve_buffer.tele_num = 0;
-	tele_recieve_buffer.next_tele = &tele_recieve_buffer.u.tTele[tele_recieve_buffer.tele_num];
-	tele_recieve_buffer.tele_pos = &tele_recieve_buffer.u.tTele[tele_recieve_buffer.tele_num];
 }
 
 void check_fixed_telegram(tele_fixed * tele, device * my_device)
@@ -81,4 +74,74 @@ void send_tele(tele_fixed *tele)
 {
 	memcpy(&tele_send, tele, TEL_TYPE_FIXED_LEN);
 
+}
+
+void tele_hander(eUart_event uart_event)
+{
+	static eTele_handler_state state = tele_handler_idle;
+	static uint8_t bytecounter = 0;
+	
+	switch(state)
+	{
+		case tele_handler_idle:
+			bytecounter = 0;
+			if (uart_event == uart_event_rx_ready)
+			{
+				state = tele_handler_recieve;
+				tele_recieve.bTele[bytecounter] = LINDAT;
+			}
+			if (uart_event == uart_event_tx_ready)
+			{
+				state = tele_handler_transmit;
+				uart_set_transmit();
+				LINDAT = tele_send.bTele[bytecounter];
+				
+			}
+			bytecounter++;
+			break;
+		case tele_handler_recieve:
+			if (uart_event == uart_event_rx_ready)
+			{
+				if (bytecounter < TEL_TYPE_FIXED_LEN)
+				{
+					tele_recieve.bTele[bytecounter] = LINDAT;
+					bytecounter++;
+				} 
+				else
+				{
+					state = tele_handler_idle;
+				}
+			}
+			else
+			{
+				state = tele_handler_error;
+
+			}
+			break;		
+		case tele_handler_transmit:
+			if (uart_event == uart_event_tx_ready)
+			{
+				if (bytecounter < TEL_TYPE_FIXED_LEN)
+				{
+					LINDAT = tele_send.bTele[bytecounter];
+					bytecounter++;
+				} 
+				else
+				{
+					state = tele_handler_idle;
+					uart_set_recieve();
+				}
+				LINSIR |= (1 << LTXOK);
+			} 
+			else
+			{
+				state = tele_handler_error;
+			}
+			break;
+		case tele_handler_error:
+			break;
+		case tele_hanlder_last:
+			state = tele_handler_error;
+			break;
+	}
 }

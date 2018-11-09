@@ -10,8 +10,17 @@
 #define TELEGRAM_H_
 
 #include <COMM/kennungen.h>
+#include <COMM/uart_attiny87.h>
 
 #define TELE_BUFFER_SIZE 4 
+
+typedef enum{
+	tele_handler_idle = 0,
+	tele_handler_transmit,
+	tele_handler_recieve,
+	tele_handler_error,
+	tele_hanlder_last
+	}eTele_handler_state;
 
 typedef union{
 	struct{
@@ -46,9 +55,9 @@ tele_fixed build_telegram(uint8_t telegram_type, uint8_t destination_group, uint
 void check_telegram(tele_fixed * tele, device * my_device);
 uint8_t tele_checksum(tele_fixed *tele);
 void send_tele(tele_fixed *tele);
-void tele_init_buffer(void);
+void tele_handler(eUart_event uart_event);
 
 tele_fixed tele_send;
-tele_buf tele_recieve_buffer;
+tele_fixed tele_recieve;
 
 #endif /* TELEGRAM_H_ */

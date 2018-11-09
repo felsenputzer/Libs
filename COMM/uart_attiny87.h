@@ -24,6 +24,12 @@
 
 #define RS485_CMD_TEST			0xA0
 
+typedef enum{
+	uart_event_tx_ready = 0,
+	uart_event_rx_ready,
+	uart_event_error
+	}eUart_event;
+
 uint8_t uart_notbussy(void);
 void uart_set_recieve(void);
 void uart_set_transmit(void);
