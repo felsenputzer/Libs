@@ -9,6 +9,7 @@
 #include <string.h>
 #include <COMM/telegram.h>
 
+device mydevice;
 
 tele_fixed build_telegram(uint8_t telegram_type, uint8_t destination_group, uint8_t destination_device, uint8_t payload_type)
 {
@@ -102,20 +103,17 @@ void tele_hander(eUart_event uart_event)
 		case tele_handler_recieve:
 			if (uart_event == uart_event_rx_ready)
 			{
-				if (bytecounter < TEL_TYPE_FIXED_LEN)
-				{
-					tele_recieve.bTele[bytecounter] = LINDAT;
-					bytecounter++;
-				} 
-				else
+				tele_recieve.bTele[bytecounter] = LINDAT;
+				bytecounter++;
+				if (bytecounter >= TEL_TYPE_FIXED_LEN)
 				{
 					state = tele_handler_idle;
-				}
+					check_fixed_telegram(&tele_recieve, &mydevice);
+				} 
 			}
 			else
 			{
 				state = tele_handler_error;
-
 			}
 			break;		
 		case tele_handler_transmit:
@@ -139,6 +137,9 @@ void tele_hander(eUart_event uart_event)
 			}
 			break;
 		case tele_handler_error:
+			bytecounter = 0;
+			memset(&tele_recieve, 0 ,TEL_TYPE_FIXED_LEN);
+			state = tele_handler_idle;
 			break;
 		case tele_hanlder_last:
 			state = tele_handler_error;
