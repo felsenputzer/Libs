@@ -7,7 +7,7 @@
 #include <avr/io.h>
 #include <stdio.h> 
 #include <string.h>
-#include <COMM/telegram.h>
+#include "telegram.h"
 
 device mydevice;
 
@@ -77,7 +77,7 @@ void send_tele(tele_fixed *tele)
 
 }
 
-void tele_hander(eUart_event uart_event)
+void tele_handler(eUart_event uart_event)
 {
 	static eTele_handler_state state = tele_handler_idle;
 	static uint8_t bytecounter = 0;

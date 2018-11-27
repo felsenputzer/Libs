@@ -9,8 +9,8 @@
 #ifndef TELEGRAM_H_
 #define TELEGRAM_H_
 
-#include <COMM/kennungen.h>
-#include <COMM/uart_attiny87.h>
+#include "kennungen.h"
+#include "uart_attiny87.h"
 
 #define TELE_BUFFER_SIZE 4 
 
