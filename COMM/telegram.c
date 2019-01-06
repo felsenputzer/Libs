@@ -8,9 +8,9 @@
 #include <stdio.h> 
 #include <string.h>
 #include <COMM/telegram.h>
-#include <tele_event_wrapper.h>
+#include "../../tele_event_wrapper.h"
 
-void build_telegram(tele_fixed *tele, telegram_type, uint8_t destination_group, uint8_t destination_device, uint8_t payload_type)
+void build_telegram(tele_fixed *tele,uint8_t telegram_type, uint8_t destination_group, uint8_t destination_device, uint8_t payload_type)
 {
 
 	tele->sTele.group_ID = destination_group;
@@ -79,7 +79,7 @@ uint8_t tele_checksum(tele_fixed *tele)
 
 void send_tele(tele_fixed *tele)
 {
-	memcpy(&tele_send, tele, TEL_TYPE_FIXED_LEN);
+	memcpy(&tele_send, tele, LEN_FIXED_TELE);
 	tele_handler(uart_event_tx_ready);
 }
 
