@@ -5,7 +5,7 @@
  *  Author: Johannes
  */ 
 #include <avr/io.h>
-#include <COMM/uart_attiny87.h>
+#include "uart_attiny87.h"
 
 #ifndef F_CPU
 #define F_CPU 16000000UL
