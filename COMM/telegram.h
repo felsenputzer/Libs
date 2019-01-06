@@ -21,6 +21,13 @@ typedef enum{
 	tele_handler_error,
 	tele_hanlder_last
 	}eTele_handler_state;
+	
+typedef enum{
+	tele_check_event_checksum = 0,
+	tele_check_event_group,
+	tele_check_event_id,
+	tele_check_event_unknown_req,
+	}eTele_hanlder_event;
 
 typedef union{
 	struct{
@@ -51,13 +58,16 @@ typedef struct{
 	uint8_t device_ID;
 	}device;
 
-tele_fixed build_telegram(uint8_t telegram_type, uint8_t destination_group, uint8_t destination_device, uint8_t payload_type);
-void check_telegram(tele_fixed * tele, device * my_device);
+tele_fixed build_telegram(tele_fixed *tele, uint8_t telegram_type, uint8_t destination_group, uint8_t destination_device, uint8_t payload_type);
+void check_telegram(tele_fixed * tele);
 uint8_t tele_checksum(tele_fixed *tele);
 void send_tele(tele_fixed *tele);
 void tele_handler(eUart_event uart_event);
+void setmydevice(uint8_t group_ID, uint8_t device_ID);
 
 tele_fixed tele_send;
 tele_fixed tele_recieve;
+
+device my_device;
 
 #endif /* TELEGRAM_H_ */
