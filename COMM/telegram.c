@@ -70,7 +70,7 @@ uint8_t tele_checksum(tele_fixed *tele)
 {
 	uint8_t checksum = 0;
 	int i = 0;
-	for(i = 0; i < TEL_TYPE_FIXED_LEN-2; i++)
+	for(i = 0; i < LEN_FIXED_TELE-2; i++)
 	{
 		checksum ^= tele->bTele[i];
 	}
@@ -115,7 +115,7 @@ void tele_handler(eUart_event uart_event)
 				if (bytecounter >= LEN_FIXED_TELE)
 				{
 					state = tele_handler_idle;
-					check_fixed_telegram(&tele_recieve, &mydevice);
+					check_fixed_telegram(&tele_recieve);
 				} 
 			}
 			else
