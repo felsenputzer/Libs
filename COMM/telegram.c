@@ -7,10 +7,10 @@
 #include <avr/io.h>
 #include <stdio.h> 
 #include <string.h>
-#include <COMM/telegram.h>
+#include "telegram.h"
 #include "../../tele_event_wrapper.h"
 
-void build_telegram(tele_fixed *tele,uint8_t telegram_type, uint8_t destination_group, uint8_t destination_device, uint8_t payload_type)
+void build_telegram(tele_fixed *tele, uint8_t telegram_type, uint8_t destination_group, uint8_t destination_device, uint8_t payload_type)
 {
 
 	tele->sTele.group_ID = destination_group;
@@ -30,18 +30,16 @@ void setmydevice(uint8_t group_ID, uint8_t device_ID)
 void check_fixed_telegram(tele_fixed * tele)
 {
 	tele_fixed tele_out;
-	 if ((tele->sTele.group_ID != my_device->group_ID) && (tele->sTele.group_ID != BROADCAST_GROUP_ID))
-	 {
-		 tele_check_event(tele_check_event_group);
-		 return;
-	 }
-	 
-	 if ((tele->sTele.device_ID != my_device->device_ID) && (tele->sTele.device_ID != BROADCAST_DEVICE_ID))
-	 {
-		 tele_check_event(tele_check_event_id);
-		 return;
-	 }
-
+	if ((tele->sTele.group_ID != my_device.group_ID) && (tele->sTele.group_ID != BROADCAST_GROUP_ID))
+	{
+		tele_check_event(tele_check_event_group);
+		return;
+	}
+	if ((tele->sTele.device_ID != my_device.device_ID) && (tele->sTele.device_ID != BROADCAST_DEVICE_ID))
+	{
+		tele_check_event(tele_check_event_id);
+		return;
+	}
 	if (tele->sTele.checksum != tele_checksum(tele))
 	{
 		tele_check_event(tele_check_event_checksum);
