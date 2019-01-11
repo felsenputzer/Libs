@@ -5,10 +5,16 @@
  *  Author: Johannes
  */
 #include <avr/io.h>
-#include <stdio.h> 
+#include <stdio.h>
 #include <string.h>
 #include "telegram.h"
 #include "../../tele_event_wrapper.h"
+
+void tele_handler_init(void)
+{
+	memset(&tele_recieve, 0 ,LEN_FIXED_TELE);
+	memset(&tele_send, 0 ,LEN_FIXED_TELE);
+}
 
 void build_telegram(tele_fixed *tele, uint8_t telegram_type, uint8_t destination_group, uint8_t destination_device, uint8_t payload_type)
 {
@@ -17,8 +23,10 @@ void build_telegram(tele_fixed *tele, uint8_t telegram_type, uint8_t destination
 	tele->sTele.device_ID = destination_device;
 	tele->sTele.telegram_type = telegram_type;
 	tele->sTele.payload_type = payload_type;
-	
-	return;	
+	tele->sTele.origin_group_ID = my_device.group_ID;
+	tele->sTele.origin_device_ID = my_device.device_ID;
+
+	return;
 }
 
 void setmydevice(uint8_t group_ID, uint8_t device_ID)
@@ -29,38 +37,25 @@ void setmydevice(uint8_t group_ID, uint8_t device_ID)
 
 void check_fixed_telegram(tele_fixed * tele)
 {
-	tele_fixed tele_out;
 	if ((tele->sTele.group_ID != my_device.group_ID) && (tele->sTele.group_ID != BROADCAST_GROUP_ID))
 	{
-		tele_check_event(tele_check_event_group);
+		wrapper_check_event(eTele_check_event_group);
 		return;
 	}
 	if ((tele->sTele.device_ID != my_device.device_ID) && (tele->sTele.device_ID != BROADCAST_DEVICE_ID))
 	{
-		tele_check_event(tele_check_event_id);
+		wrapper_check_event(eTele_check_event_id);
 		return;
 	}
 	if (tele->sTele.checksum != tele_checksum(tele))
 	{
-		tele_check_event(tele_check_event_checksum);
+		wrapper_check_event(eTele_check_event_checksum);
 		return;
 	}
-	
-	switch(tele->sTele.payload_type)
+
+	if (wrapper_comm_event(tele->sTele.payload_type, tele, &tele_send))
 	{
-		case TEL_DATA_REQ:
-			break;
-		case TEL_DATA_RESP:
-			break;
-		case TEL_HEARTBEAT_REQ:
-			tele_comm_event(TEL_HEARTBEAT_REQ, &tele_out);
-			send_tele(&tele_out);
-			break;
-		case TEL_HEARTBEAT_RESP:
-			break;
-		default:
-			tele_check_event(tele_check_event_unknown_req);
-			break;
+		send_tele(&tele_send);
 	}
 }
 
@@ -85,14 +80,14 @@ void tele_handler(eUart_event uart_event)
 {
 	static eTele_handler_state state = tele_handler_idle;
 	static uint8_t bytecounter = 0;
-	
+
 	switch(state)
 	{
 		case tele_handler_idle:
 			bytecounter = 0;
-			memset(&tele_recieve, 0 ,LEN_FIXED_TELE);
 			if (uart_event == uart_event_rx_ready)
 			{
+				memset(&tele_recieve, 0 ,LEN_FIXED_TELE);
 				state = tele_handler_recieve;
 				tele_recieve.bTele[bytecounter] = LINDAT;
 			}
@@ -101,7 +96,7 @@ void tele_handler(eUart_event uart_event)
 				state = tele_handler_transmit;
 				uart_set_transmit();
 				LINDAT = tele_send.bTele[bytecounter];
-				
+
 			}
 			bytecounter++;
 			break;
@@ -114,13 +109,13 @@ void tele_handler(eUart_event uart_event)
 				{
 					state = tele_handler_idle;
 					check_fixed_telegram(&tele_recieve);
-				} 
+				}
 			}
 			else
 			{
 				state = tele_handler_error;
 			}
-			break;		
+			break;
 		case tele_handler_transmit:
 			if (uart_event == uart_event_tx_ready)
 			{
@@ -128,14 +123,14 @@ void tele_handler(eUart_event uart_event)
 				{
 					LINDAT = tele_send.bTele[bytecounter];
 					bytecounter++;
-				} 
+				}
 				else
 				{
 					state = tele_handler_idle;
 					uart_set_recieve();
 				}
 				LINSIR |= (1 << LTXOK);
-			} 
+			}
 			else
 			{
 				state = tele_handler_error;
@@ -144,6 +139,7 @@ void tele_handler(eUart_event uart_event)
 		case tele_handler_error:
 			bytecounter = 0;
 			memset(&tele_recieve, 0 ,LEN_FIXED_TELE);
+			memset(&tele_send, 0 ,LEN_FIXED_TELE);
 			state = tele_handler_idle;
 			break;
 		case tele_hanlder_last:

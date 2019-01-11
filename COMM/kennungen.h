@@ -3,21 +3,52 @@
  *
  * Created: 25.10.2018 13:25:33
  *  Author: Johannes
- */ 
+ */
 
 
 #ifndef KENNUNGEN_H
 #define KENNUNGEN_H
 
-#define LEN_FIXED_TELE			0x0D
+#define LEN_FIXED_TELE			0x0F
 
 #define TEL_TYPE_FIXED_LEN		0x10
 #define TEL_TYPE_VAR_LEN		0x20
 
-#define TEL_DATA_REQ			0x10
-#define TEL_DATA_RESP			0x20
-#define TEL_HEARTBEAT_REQ		0x30
-#define TEL_HEARTBEAT_RESP		0x40
+typedef enum
+{
+	TEL_HEARTBEAT_REQ		=0,
+	TEL_HEARTBEAT_RESP,
+	TEL_DATA_REQ,
+	TEL_DATA_RESP,
+	TEL_SET_OUTPUT,
+	TEL_ACK,
+
+	TEL_TELE_LAST
+}eTeleType;
+
+typedef enum
+{
+	eTestAction_None = 0,
+	eTestAction_Set_LED,
+	eTestAction_Set_7SEG,
+	eTestAction_Set_LoadCurrent,
+	eTestAction_Last
+}eTestAction;
+
+typedef enum
+{
+		eData_Temp_CH1 = 0,
+		eData_Temp_CH2,
+		eData_Temp_CH3,
+		eData_Temp_CH4,
+		eData_Temp_CH5,
+		eData_Temp_CH6,
+		eData_Humidity,
+		eData_Pressure,
+		eData_Voltage,
+		eData_Current,
+		eData_Moisture
+}eData;
 
 #define GRP_ID_TEST				0xFE
 
