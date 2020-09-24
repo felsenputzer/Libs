@@ -9,27 +9,30 @@
 #ifndef SYSTIME_H_
 #define SYSTIME_H_
 
+#define EVENT_STACK_SIZE 16
+
 typedef struct systime_event{
-	bool *flag;
+	bool empty;
+	volatile bool *flag;
 	uint32_t event_time;
 	systime_event *next;	
 	};
 
 void systime_init();
-void systime_attach(bool *flag, uint16_t ms);
 
 class systime_handler
 {
 public:
 	systime_handler();
 	void update(void);
-	void attach(bool *flag, uint16_t ms);
+	void attach(volatile bool *flag, uint16_t ms);
 	uint32_t get_time(void);
 	void pop_front(void);
 	void d_Printlist(void);
 protected:
 private:
 	systime_event *head;
+	systime_event event_stack[EVENT_STACK_SIZE];
 	uint32_t system_time;
 };
 

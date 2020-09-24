@@ -17,38 +17,20 @@ void systime_init()
 	TIMSK0 |= (1 << OCIE0A);
 	TCCR0B |= (1 << CS02); //Prescaler 32
 	TCCR0A |= (1 << WGM01); //Set CTC Mode
+	
 	return;
 }
-
-/*void systime_attach(bool *flag, uint16_t ms)
-{
-	systime_event *event_pos = first_event;
-	uint32_t real_time = time_ms + (uint32_t)ms;
-	
-	systime_event new_event;
-	new_event.flag = flag;
-	new_event.event_time = real_time;
-	if (first_event->next == 0)
-	{
-		new_event.next = 0;
-		first_event->next = &new_event;
-	} 
-	else
-	{
-		while((real_time <= event_pos->next->event_time) && (event_pos->next != 0))
-		{
-			event_pos = event_pos->next;
-		}
-		new_event.next = event_pos->next;
-		*(event_pos->next) = new_event;	
-	}
-	return;
-}*/
 
  systime_handler::systime_handler()
 {
 	system_time = 0;
-	head->next = 0;
+	for (int i = 0; i < EVENT_STACK_SIZE; i++)
+	{
+		event_stack[i].empty = true;
+		event_stack[i].event_time = 0;
+		event_stack[i].next = 0;
+	}
+	head = 0;
 }
 
 void systime_handler::update(void)
@@ -61,28 +43,37 @@ void systime_handler::update(void)
 	}
 }
 
-void systime_handler::attach(bool *flag, uint16_t ms)
+void systime_handler::attach(volatile bool *flag, uint16_t ms)
 {
 	uint32_t real_time = system_time + (uint32_t)ms;
-	systime_event *new_event;
-	new_event->flag = flag;
-	new_event->event_time = real_time;
-	systime_event *event_pos = head;
+	uint8_t array_pos = 0;
 	
-	if (event_pos->next == 0)
+	while((array_pos < EVENT_STACK_SIZE) && (event_stack[array_pos].empty == false) )
 	{
-		new_event->next = 0;
-		head->next = new_event;
+		array_pos++;
+	}
+	
+	event_stack[array_pos].empty = false;
+	event_stack[array_pos].flag = flag;
+	event_stack[array_pos].event_time = real_time;
+	
+	if (head == 0)
+	{
+		event_stack[array_pos].next = 0;
+		head = &event_stack[array_pos];
 	}
 	else
 	{
+		systime_event *event_pos = head;
 		while((real_time >= event_pos->event_time) && (event_pos->next != 0))
 		{
 			event_pos = event_pos->next;
 		}
-		new_event->next = event_pos->next;
-		event_pos->next = new_event;
+		event_stack[array_pos].next = event_pos->next;
+		event_pos->next = &event_stack[array_pos];
 	}
+	
+
 	return;
 }
 
@@ -93,41 +84,28 @@ uint32_t systime_handler::get_time(void)
 
 void systime_handler::pop_front(void)
 {
-	head->next = head->next->next;
+	head->empty = true;
+	head = head->next;
 }
 
 void systime_handler::d_Printlist(void)
 {
 	uint8_t count = 1;
 	systime_event *event_pos = head;
-	do 
+	debugprint("SysT:", systime.get_time());
+	while (event_pos->next != 0) 
 	{
-		count++;
+		event_pos = event_pos->next;
 		debugprint("Ev:", count);
 		debugprint("time:", event_pos->event_time);
-		event_pos = event_pos->next;
-	} while (event_pos->next != 0);
+		count++;
+	}
 }
 
 ISR(TIMER0_COMPA_vect)
 {
 	cli();
 	systime.update();
-	/*if (first_event->next != 0)
-	{
-		if (time_ms >= first_event->next->event_time)
-		{
-			*first_event->next->flag = true;
-			if (first_event->next->next == 0)
-			{
-				first_event->next = 0;
-			}
-			else
-			{
-				first_event->next = first_event->next->next;
-			}
-		}
-	}*/
 	sei();
 	if (systime.get_time() % 1000 == 0)
 	{
